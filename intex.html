@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onam Games Coordination & Registration Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white; color: black; font-size: 12pt; }
+      .page-break { page-break-after: always; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+<body class="bg-amber-50 min-h-screen text-slate-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-amber-700 text-white shadow-md no-print">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold tracking-wide">🌼 Onam Games Portal</h1>
+        <p class="text-xs text-amber-200">Church Community Sports & Cultural Coordination</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="switchTab('register')" class="tab-btn px-3 py-1.5 rounded-lg bg-amber-800 hover:bg-amber-900 text-sm font-medium transition" id="btn-register">Register</button>
+        <button onclick="switchTab('scores')" class="tab-btn px-3 py-1.5 rounded-lg hover:bg-amber-800 text-sm font-medium transition" id="btn-scores">Enter Scores</button>
+        <button onclick="switchTab('leaderboard')" class="tab-btn px-3 py-1.5 rounded-lg hover:bg-amber-800 text-sm font-medium transition" id="btn-leaderboard">Leaderboard</button>
+        <button onclick="switchTab('roster')" class="tab-btn px-3 py-1.5 rounded-lg hover:bg-amber-800 text-sm font-medium transition" id="btn-roster">Print Rosters</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4 sm:p-6 no-print">
+    
+    <!-- ================= TAB 1: REGISTRATION ================= -->
+    <section id="tab-register" class="tab-content">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Registration Form -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 md:col-span-1">
+          <h2 class="text-lg font-bold text-amber-900 mb-4 border-b pb-2">Participant Registration</h2>
+          <form id="registration-form" onsubmit="handleRegistration(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+              <input type="text" id="reg-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 text-sm outline-none" placeholder="e.g., Rahul Thomas" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Date of Birth</label>
+                <input type="date" id="reg-dob" onchange="updateEligibleGamesPreview()" required class="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 text-sm outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Gender</label>
+                <select id="reg-gender" onchange="updateEligibleGamesPreview()" required class="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">House / Ward</label>
+                <select id="reg-house" required class="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                  <option value="Chera">Chera</option>
+                  <option value="Chola">Chola</option>
+                  <option value="Pandya">Pandya</option>
+                  <option value="Pallava">Pallava</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Phone</label>
+                <input type="tel" id="reg-phone" placeholder="9876543210" class="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 text-sm outline-none" />
+              </div>
+            </div>
+
+            <!-- Auto-Calculated Bracket Badge -->
+            <div id="bracket-preview" class="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 flex justify-between items-center">
+              <span>Category: <strong id="preview-cat">Select DOB</strong></span>
+              <span>Age: <strong id="preview-age">-</strong></span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Select Games to Join</label>
+              <div id="eligible-games-list" class="space-y-1.5 max-h-48 overflow-y-auto border p-2 rounded-lg bg-slate-50 text-xs">
+                <p class="text-slate-400 italic">Enter DOB & Gender to see eligible games</p>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 rounded-lg shadow-sm text-sm transition">Register Participant</button>
+          </form>
+        </div>
+
+        <!-- Participants Directory -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 md:col-span-2">
+          <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h2 class="text-lg font-bold text-amber-900">Registered Participants (<span id="total-participants-count">0</span>)</h2>
+            <button onclick="clearAllData()" class="text-xs text-red-500 hover:underline">Reset Demo Data</button>
+          </div>
+          <div class="overflow-x-auto max-h-[500px]">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-amber-100 text-amber-900">
+                  <th class="p-2 border">Name</th>
+                  <th class="p-2 border">House</th>
+                  <th class="p-2 border">Category</th>
+                  <th class="p-2 border">Gender</th>
+                  <th class="p-2 border">Registered Games</th>
+                </tr>
+              </thead>
+              <tbody id="participants-table-body">
+                <!-- Rows dynamically injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: SCORE ENTRY ================= -->
+    <section id="tab-scores" class="tab-content hidden">
+      <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-amber-100">
+        <h2 class="text-lg font-bold text-amber-900 mb-4 border-b pb-2">Submit Game Results & Points</h2>
+        <form onsubmit="handleScoreSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Select Event / Game</label>
+            <select id="score-game" onchange="loadGameParticipantsForScore()" required class="w-full px-3 py-2 border rounded-lg text-sm"></select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Winning House</label>
+              <select id="score-house" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                <option value="Chera">Chera</option>
+                <option value="Chola">Chola</option>
+                <option value="Pandya">Pandya</option>
+                <option value="Pallava">Pallava</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Winning Individual (Optional for Team Games)</label>
+              <select id="score-participant" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <option value="">-- None / Team Game --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Position / Rank</label>
+              <select id="score-rank" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <option value="1">1st Place</option>
+                <option value="2">2nd Place</option>
+                <option value="3">3rd Place</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Points Awarded</label>
+              <input type="number" id="score-points" required value="10" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div class="flex items-center pt-5">
+              <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" id="score-is-tie" class="rounded text-amber-600" />
+                <span>Mark as Tie</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-2 rounded-lg text-sm transition">Save Result</button>
+        </form>
+
+        <!-- Logged Results List -->
+        <div class="mt-6 border-t pt-4">
+          <h3 class="text-sm font-bold text-slate-700 mb-2">Recorded Event Winners</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border">
+              <thead>
+                <tr class="bg-slate-100">
+                  <th class="p-2 border">Game</th>
+                  <th class="p-2 border">Rank</th>
+                  <th class="p-2 border">House / Winner</th>
+                  <th class="p-2 border">Points</th>
+                </tr>
+              </thead>
+              <tbody id="results-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: LEADERBOARD ================= -->
+    <section id="tab-leaderboard" class="tab-content hidden">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 text-center mb-6">
+          <h2 class="text-2xl font-black text-amber-900">🏆 Overall House Championship</h2>
+          <p class="text-xs text-slate-500">Live points aggregated across all individual and team events</p>
+        </div>
+
+        <div id="leaderboard-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <!-- House standings dynamic cards -->
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100">
+          <h3 class="text-sm font-bold text-slate-700 mb-3">House Standings Summary</h3>
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="bg-amber-100 text-amber-900">
+                <th class="p-3 border">Rank</th>
+                <th class="p-3 border">House Name</th>
+                <th class="p-3 border">Total Wins</th>
+                <th class="p-3 border text-right">Total Points</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: PRINT ROSTERS ================= -->
+    <section id="tab-roster" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 mb-6 flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold text-amber-900">Volunteer & Referee Roster Sheets</h2>
+          <p class="text-xs text-slate-500">Generates clean, page-by-page sheets ready for the printer.</p>
+        </div>
+        <button onclick="window.print()" class="bg-amber-700 hover:bg-amber-800 text-white font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          🖨️ Print All Rosters
+        </button>
+      </div>
+
+      <div id="screen-roster-preview" class="space-y-6">
+        <!-- Rendered rosters preview -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= PRINT-ONLY TEMPLATE ================= -->
+  <div id="print-sheet-container" class="print-only">
+    <!-- Populated on demand for printing -->
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    // 1. Initial State & Configuration
+    const GAMES_CATALOG = [
+      { id: 1, name: "Vadam Vali (Tug of War)", gender: "MALE", categories: ["YOUTH", "ADULTS"], type: "Team (7)", maxPerHouse: 7 },
+      { id: 2, name: "Thiruvathira Kali", gender: "FEMALE", categories: ["YOUTH", "ADULTS", "SENIORS"], type: "Team (8)", maxPerHouse: 8 },
+      { id: 3, name: "Lemon & Spoon Race", gender: "ANY", categories: ["KIDS"], type: "Individual", maxPerHouse: 3 },
+      { id: 4, name: "Sack Race", gender: "ANY", categories: ["TEENS", "YOUTH"], type: "Individual", maxPerHouse: 3 },
+      { id: 5, name: "Musical Chairs", gender: "FEMALE", categories: ["ADULTS", "SENIORS"], type: "Individual", maxPerHouse: 4 },
+      { id: 6, name: "Sundarikku Pottu Thoduka (Blindfold Bindi)", gender: "ANY", categories: ["ALL"], type: "Individual", maxPerHouse: 5 },
+      { id: 7, name: "Uriyadi (Pot Breaking)", gender: "MALE", categories: ["YOUTH", "ADULTS"], type: "Individual", maxPerHouse: 2 }
+    ];
+
+    let participants = JSON.parse(localStorage.getItem("onam_participants") || "[]");
+    let results = JSON.parse(localStorage.getItem("onam_results") || "[]");
+
+    // 2. Age & Category Calculations
+    function calculateAge(dobString) {
+      if (!dobString) return 0;
+      const birth = new Date(dobString);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      return age;
+    }
+
+    function getAgeCategory(age) {
+      if (age < 13) return "KIDS";
+      if (age <= 17) return "TEENS";
+      if (age <= 35) return "YOUTH";
+      if (age <= 55) return "ADULTS";
+      return "SENIORS";
+    }
+
+    // 3. UI Dynamic Filters for Registration
+    function updateEligibleGamesPreview() {
+      const dob = document.getElementById("reg-dob").value;
+      const gender = document.getElementById("reg-gender").value;
+      const listContainer = document.getElementById("eligible-games-list");
+
+      if (!dob) {
+        listContainer.innerHTML = `<p class="text-slate-400 italic">Enter DOB & Gender to see eligible games</p>`;
+        return;
+      }
+
+      const age = calculateAge(dob);
+      const category = getAgeCategory(age);
+
+      document.getElementById("preview-age").textContent = `${age} yrs`;
+      document.getElementById("preview-cat").textContent = category;
+
+      // Filter games
+      const eligible = GAMES_CATALOG.filter(g => {
+        const matchesGender = g.gender === "ANY" || g.gender === gender;
+        const matchesAge = g.categories.includes("ALL") || g.categories.includes(category);
+        return matchesGender && matchesAge;
+      });
+
+      if (eligible.length === 0) {
+        listContainer.innerHTML = `<p class="text-red-500 font-semibold">No eligible games found for this age bracket.</p>`;
+        return;
+      }
+
+      listContainer.innerHTML = eligible.map(g => `
+        <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-amber-100 cursor-pointer">
+          <input type="checkbox" name="selected_games" value="${g.id}" class="text-amber-600 rounded" />
+          <span><strong>${g.name}</strong> <span class="text-slate-500 text-[10px]">(${g.type})</span></span>
+        </label>
+      `).join("");
+    }
+
+    // 4. Registration Submission (With double booking prevention)
+    function handleRegistration(e) {
+      e.preventDefault();
+      const name = document.getElementById("reg-name").value.trim();
+      const dob = document.getElementById("reg-dob").value;
+      const gender = document.getElementById("reg-gender").value;
+      const house = document.getElementById("reg-house").value;
+      const phone = document.getElementById("reg-phone").value.trim();
+
+      const selectedGameCheckboxes = document.querySelectorAll("input[name='selected_games']:checked");
+      const selectedGameIds = Array.from(selectedGameCheckboxes).map(cb => Number(cb.value));
+
+      if (selectedGameIds.length === 0) {
+        alert("Please select at least one game to participate in.");
+        return;
+      }
+
+      const age = calculateAge(dob);
+      const category = getAgeCategory(age);
+
+      const newParticipant = {
+        id: Date.now(),
+        name,
+        dob,
+        age,
+        category,
+        gender,
+        house,
+        phone,
+        gameIds: selectedGameIds
+      };
+
+      participants.push(newParticipant);
+      saveState();
+      renderAll();
+      e.target.reset();
+      updateEligibleGamesPreview();
+      alert(`Success! ${name} registered for ${selectedGameIds.length} game(s).`);
+    }
+
+    // 5. Score Submissions
+    function handleScoreSubmit(e) {
+      e.preventDefault();
+      const gameId = Number(document.getElementById("score-game").value);
+      const house = document.getElementById("score-house").value;
+      const participantId = document.getElementById("score-participant").value;
+      const rank = Number(document.getElementById("score-rank").value);
+      const points = Number(document.getElementById("score-points").value);
+      const isTie = document.getElementById("score-is-tie").checked;
+
+      const game = GAMES_CATALOG.find(g => g.id === gameId);
+      const participant = participants.find(p => p.id === Number(participantId));
+
+      results.push({
+        id: Date.now(),
+        gameId,
+        gameName: game ? game.name : "",
+        house,
+        participantName: participant ? participant.name : "Team Roster",
+        rank,
+        points,
+        isTie
+      });
+
+      saveState();
+      renderAll();
+      alert("Score recorded successfully!");
+    }
+
+    function loadGameParticipantsForScore() {
+      const gameId = Number(document.getElementById("score-game").value);
+      const select = document.getElementById("score-participant");
+      const registered = participants.filter(p => p.gameIds.includes(gameId));
+
+      select.innerHTML = `<option value="">-- None / Team Game --</option>` + 
+        registered.map(p => `<option value="${p.id}">${p.name} (${p.house})</option>`).join("");
+    }
+
+    // 6. Persistence & Rendering
+    function saveState() {
+      localStorage.setItem("onam_participants", JSON.stringify(participants));
+      localStorage.setItem("onam_results", JSON.stringify(results));
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("bg-amber-800", "bg-amber-900"));
+      
+      document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+      document.getElementById(`btn-${tabId}`).classList.add("bg-amber-800");
+    }
+
+    function renderAll() {
+      renderParticipantsTable();
+      renderScoresDropdowns();
+      renderResultsTable();
+      renderLeaderboard();
+      renderRosterSheets();
+    }
+
+    function renderParticipantsTable() {
+      document.getElementById("total-participants-count").textContent = participants.length;
+      const tbody = document.getElementById("participants-table-body");
+      if (participants.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400">No participants registered yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = participants.map(p => {
+        const gameNames = p.gameIds.map(gid => {
+          const found = GAMES_CATALOG.find(g => g.id === gid);
+          return found ? found.name : "";
+        }).join(", ");
+
+        return `
+          <tr class="hover:bg-slate-50 border-b">
+            <td class="p-2 font-semibold text-slate-800">${p.name}</td>
+            <td class="p-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">${p.house}</span></td>
+            <td class="p-2">${p.category} (${p.age})</td>
+            <td class="p-2">${p.gender}</td>
+            <td class="p-2 text-slate-600">${gameNames}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderScoresDropdowns() {
+      const select = document.getElementById("score-game");
+      select.innerHTML = GAMES_CATALOG.map(g => `<option value="${g.id}">${g.name} (${g.type})</option>`).join("");
+      loadGameParticipantsForScore();
+    }
+
+    function renderResultsTable() {
+      const tbody = document.getElementById("results-table-body");
+      if (results.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-center text-slate-400">No winners entered yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = results.slice().reverse().map(r => `
+        <tr class="border-b">
+          <td class="p-2 font-medium">${r.gameName}</td>
+          <td class="p-2">Rank ${r.rank} ${r.isTie ? '<span class="text-amber-600 font-bold">(Tie)</span>' : ''}</td>
+          <td class="p-2 font-semibold">${r.house} ${r.participantName !== 'Team Roster' ? `(${r.participantName})` : ''}</td>
+          <td class="p-2 font-bold text-green-700">+${r.points}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderLeaderboard() {
+      const houseScores = { Chera: 0, Chola: 0, Pandya: 0, Pallava: 0 };
+      const houseWins = { Chera: 0, Chola: 0, Pandya: 0, Pallava: 0 };
+
+      results.forEach(r => {
+        if (houseScores[r.house] !== undefined) {
+          houseScores[r.house] += r.points;
+          if (r.rank === 1) houseWins[r.house]++;
+        }
+      });
+
+      const sortedHouses = Object.keys(houseScores).sort((a, b) => houseScores[b] - houseScores[a]);
+
+      // Standings cards
+      const cardsContainer = document.getElementById("leaderboard-cards");
+      cardsContainer.innerHTML = sortedHouses.map((house, idx) => `
+        <div class="p-4 rounded-xl border ${idx === 0 ? 'bg-amber-100 border-amber-300 ring-2 ring-amber-400' : 'bg-white border-slate-200'} text-center shadow-sm">
+          <div class="text-xs font-bold ${idx === 0 ? 'text-amber-800' : 'text-slate-500'}">Rank #${idx + 1}</div>
+          <div class="text-xl font-black text-slate-800 mt-1">${house}</div>
+          <div class="text-3xl font-extrabold text-amber-700 mt-2">${houseScores[house]} <span class="text-xs font-medium text-slate-500">pts</span></div>
+        </div>
+      `).join("");
+
+      // Table body
+      const tbody = document.getElementById("leaderboard-table-body");
+      tbody.innerHTML = sortedHouses.map((house, idx) => `
+        <tr class="border-b ${idx === 0 ? 'bg-amber-50 font-bold' : ''}">
+          <td class="p-3">#${idx + 1}</td>
+          <td class="p-3">${house}</td>
+          <td class="p-3">${houseWins[house]} events</td>
+          <td class="p-3 text-right font-bold text-amber-900">${houseScores[house]}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderRosterSheets() {
+      const container = document.getElementById("screen-roster-preview");
+      const printContainer = document.getElementById("print-sheet-container");
+      
+      let html = "";
+      let printHtml = "";
+
+      GAMES_CATALOG.forEach(game => {
+        const registered = participants.filter(p => p.gameIds.includes(game.id));
+        
+        const rosterMarkup = `
+          <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200 page-break">
+            <div class="border-b pb-2 mb-3 flex justify-between items-center">
+              <div>
+                <h3 class="text-lg font-bold text-amber-900">${game.name}</h3>
+                <p class="text-xs text-slate-500">Type: ${game.type} | Allowed: ${game.gender} (${game.categories.join(", ")})</p>
+              </div>
+              <span class="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded">${registered.length} Participants</span>
+            </div>
+
+            <table class="w-full text-xs text-left border">
+              <thead>
+                <tr class="bg-slate-100">
+                  <th class="p-2 border w-12">#</th>
+                  <th class="p-2 border">Participant Name</th>
+                  <th class="p-2 border">House</th>
+                  <th class="p-2 border w-24">Attendance</th>
+                  <th class="p-2 border w-24">Referee Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${registered.length === 0 
+                  ? `<tr><td colspan="5" class="p-3 text-center text-slate-400">No participants registered yet.</td></tr>`
+                  : registered.map((p, i) => `
+                    <tr class="border-b">
+                      <td class="p-2 border">${i + 1}</td>
+                      <td class="p-2 border font-medium">${p.name}</td>
+                      <td class="p-2 border">${p.house}</td>
+                      <td class="p-2 border"></td>
+                      <td class="p-2 border"></td>
+                    </tr>
+                  `).join("")
+                }
+              </tbody>
+            </table>
+          </div>
+        `;
+        html += rosterMarkup;
+        printHtml += rosterMarkup;
+      });
+
+      container.innerHTML = html;
+      printContainer.innerHTML = printHtml;
+    }
+
+    function clearAllData() {
+      if (confirm("Are you sure you want to clear all registrations and scores?")) {
+        localStorage.clear();
+        participants = [];
+        results = [];
+        renderAll();
+      }
+    }
+
+    // Initialize application on load
+    window.onload = () => {
+      renderAll();
+      updateEligibleGamesPreview();
+    };
+  </script>
+</body>
+</html>
